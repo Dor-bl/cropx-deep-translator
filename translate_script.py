@@ -20,27 +20,19 @@ def translate_excel_file(file_path: str, sheet_name: str, column_to_translate: s
         # Initialize the translator
         translator = GoogleTranslator(source=source_lang, target=target_lang)
         
-        #translator = DeeplTranslator(source=source_lang, target=target_lang)
-
         # Create a new column for the translated text
         translated_column_name = f"{column_to_translate}_{target_lang}"
-        df[translated_column_name] = ""  # Initialize with empty strings
         
         print(f"Translating column '{column_to_translate}'...")
-        
-        # Iterate through the column and translate each cell
-        for row_num, (index, row) in enumerate(df.iterrows(), start=1):
-            text_to_translate = row[column_to_translate]
-            
-            # Check if the cell contains a string
-            if isinstance(text_to_translate, str) and text_to_translate.strip() != "":
-                translated_text = translator.translate(text_to_translate)
-                df.at[index, translated_column_name] = translated_text
-            else:
-                # If the cell is empty or not a string, keep it as is
-                df.at[index, translated_column_name] = text_to_translate
-                
-            print(f"Row {row_num}: Translated '{text_to_translate}' to '{translated_text}'")
+
+        # Define a function to apply to each cell
+        def translate_cell(cell_value):
+            if isinstance(cell_value, str) and cell_value.strip() != "":
+                return translator.translate(cell_value)
+            return cell_value
+
+        # Apply the translation function to the column
+        df[translated_column_name] = df[column_to_translate].apply(translate_cell)
 
         # Define the output file name
         output_file_path = f"{os.path.splitext(file_path)[0]}_translated.xlsx"
