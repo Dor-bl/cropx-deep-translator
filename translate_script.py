@@ -1,6 +1,11 @@
 import pandas as pd
-from deep_translator import GoogleTranslator, DeeplTranslator
+from deep_translator import GoogleTranslator, DeeplTranslator,ChatGptTranslator
 import os
+import time
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 def translate_excel_file(file_path: str, sheet_name: str, column_to_translate: str, source_lang: str, target_lang: str) -> None:
     """
@@ -18,12 +23,23 @@ def translate_excel_file(file_path: str, sheet_name: str, column_to_translate: s
         df = pd.read_excel(file_path, sheet_name=sheet_name)
         
         # Initialize the translator
-        translator = GoogleTranslator(source=source_lang, target=target_lang)
-        
+        # translator = GoogleTranslator(source=source_lang, target=target_lang)
+
+        # Get API key from environment variables
+        chatgpt_api_key = os.getenv("CHATGPT_API_KEY")
+        if not chatgpt_api_key or chatgpt_api_key == "your_api_key_here":
+            raise ValueError("Please set your CHATGPT_API_KEY in the .env file.")
+
+        translator = ChatGptTranslator(api_key=chatgpt_api_key, source=source_lang, target=target_lang)
+
+
         # Create a new column for the translated text
         translated_column_name = f"{column_to_translate}_{target_lang}"
         
         print(f"Translating column '{column_to_translate}'...")
+
+        # Start timer
+        start_time = time.time()
 
         # Define a function to apply to each cell
         def translate_cell(cell_value):
@@ -33,6 +49,11 @@ def translate_excel_file(file_path: str, sheet_name: str, column_to_translate: s
 
         # Apply the translation function to the column
         df[translated_column_name] = df[column_to_translate].apply(translate_cell)
+
+        # End timer and calculate duration
+        end_time = time.time()
+        duration = end_time - start_time
+        print(f"Translation process took {duration:.2f} seconds.")
 
         # Define the output file name
         output_file_path = f"{os.path.splitext(file_path)[0]}_translated.xlsx"
