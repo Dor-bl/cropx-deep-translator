@@ -1,5 +1,5 @@
 import pandas as pd
-from deep_translator import GoogleTranslator, DeeplTranslator,ChatGptTranslator
+from deep_translator import GoogleTranslator, DeeplTranslator
 import os
 import time
 from dotenv import load_dotenv
@@ -30,7 +30,7 @@ def translate_excel_file(file_path: str, sheet_name: str, column_to_translate: s
         if not chatgpt_api_key or chatgpt_api_key == "your_api_key_here":
             raise ValueError("Please set your CHATGPT_API_KEY in the .env file.")
 
-        translator = ChatGptTranslator(api_key=chatgpt_api_key, source=source_lang, target=target_lang)
+        translator = GoogleTranslator(api_key=chatgpt_api_key, source=source_lang, target=target_lang)
 
 
         # Create a new column for the translated text
