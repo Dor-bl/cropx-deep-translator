@@ -1,5 +1,5 @@
 import pandas as pd
-from deep_translator import GoogleTranslator, DeeplTranslator
+from deep_translator import GoogleTranslator, DeeplTranslator, MicrosoftTranslator
 import os
 import time
 from dotenv import load_dotenv
@@ -23,37 +23,48 @@ def translate_excel_file(file_path: str, sheet_name: str, column_to_translate: s
         df = pd.read_excel(file_path, sheet_name=sheet_name)
         
         # Initialize the translator
-        # translator = GoogleTranslator(source=source_lang, target=target_lang)
+        translator = GoogleTranslator(source=source_lang, target=target_lang)
 
         # Get API key from environment variables
         chatgpt_api_key = os.getenv("CHATGPT_API_KEY")
         if not chatgpt_api_key or chatgpt_api_key == "your_api_key_here":
             raise ValueError("Please set your CHATGPT_API_KEY in the .env file.")
 
-        translator = GoogleTranslator(api_key=chatgpt_api_key, source=source_lang, target=target_lang)
+        #translator = MicrosoftTranslator(api_key=chatgpt_api_key, source=source_lang, target=target_lang)
 
 
         # Create a new column for the translated text
-        translated_column_name = f"{column_to_translate}_{target_lang}"
+        translated_column_name = f"{target_lang}"
         
         print(f"Translating column '{column_to_translate}'...")
+        print(f"Total rows to translate: {len(df)}")
+        print("-" * 50)
 
         # Start timer
         start_time = time.time()
 
-        # Define a function to apply to each cell
-        def translate_cell(cell_value):
+        # Create a list to store translations
+        translations = []
+        
+        # Translate each cell with progress feedback
+        for idx, cell_value in enumerate(df[column_to_translate], 1):
             if isinstance(cell_value, str) and cell_value.strip() != "":
-                return translator.translate(cell_value)
-            return cell_value
-
-        # Apply the translation function to the column
-        df[translated_column_name] = df[column_to_translate].apply(translate_cell)
+                translated_text = translator.translate(cell_value)
+                translations.append(translated_text)
+                print(f"[{idx}/{len(df)}] Translated: {cell_value[:50]}{'...' if len(cell_value) > 50 else ''}")
+            else:
+                translations.append(cell_value)
+                print(f"[{idx}/{len(df)}] Skipped empty cell")
+        
+        # Assign the translations to the new column
+        df[translated_column_name] = translations
 
         # End timer and calculate duration
         end_time = time.time()
         duration = end_time - start_time
+        print("-" * 50)
         print(f"Translation process took {duration:.2f} seconds.")
+        print(f"Average time per row: {duration/len(df):.2f} seconds")
 
         # Define the output file name
         output_file_path = f"{os.path.splitext(file_path)[0]}_translated.xlsx"
@@ -74,7 +85,7 @@ if __name__ == "__main__":
     # --- Configuration ---
     # Make sure to replace these values with your specific file and language details.
     
-    input_file = "excel_files/nl_translations.xlsx"
+    input_file = "excel_files/nl_mobile_translation.xlsx"
     sheet = "Sheet1"
     text_column = "en"  # Name of the column with text to translate
     
